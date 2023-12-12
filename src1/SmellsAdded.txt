@@ -1,0 +1,11 @@
+1. Direct DOM Manipulation
+2. Force Update
+3. JS Outside Render
+4. Low Cohesion
+5. Props Drilling
+6. Too Many Props
+7. Uncontrolled Components
+8. Duplicate Component
+9. Props in Initial State
+10. Large Component
+11. Inheritance Instead of Composition
