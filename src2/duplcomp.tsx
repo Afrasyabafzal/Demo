@@ -1,153 +1,110 @@
-import { useMemo, useState } from "react";
-import type * as React from "react";
-import _ from "underscore";
-import { t } from "ttag";
-import { useDebouncedValue } from "metabase/hooks/use-debounced-value";
-import { SEARCH_DEBOUNCE_DURATION } from "metabase/lib/constants";
-import EmptyState from "metabase/components/EmptyState";
-
-import type { InputProps } from "metabase/core/components/Input";
-import Input from "metabase/core/components/Input";
-import {
-  OptionContainer,
-  OptionsList,
-  EmptyStateContainer,
-  OptionItem,
-  FilterInputContainer,
-} from "./SingleSelectListField.styled";
-import type { SingleSelectListFieldProps, Option } from "./types";
-import { isValidOptionItem } from "./utils";
-
-function createOptionsFromValuesWithoutOptions(
-  values: string[],
-  options: Option[],
-): Option {
-  const optionsMap = _.indexBy(options, "0");
-  return values.filter(value => !optionsMap[value]).map(value => [value]);
-}
-
-const SingleSelectListField = ({
-  onChange,
-  value,
-  options,
-  optionRenderer,
-  placeholder = t`Find...`,
-  isDashboardFilter,
-  checkedColor,
-}: SingleSelectListFieldProps) => {
-  const [selectedValue, setSelectedValue] = useState(value?.[0]);
-  const [addedOptions, setAddedOptions] = useState<Option>(() =>
-    createOptionsFromValuesWithoutOptions(value, options),
-  );
-
-  const augmentedOptions = useMemo<Option[]>(() => {
-    return [...options.filter(option => option[0] != null), ...addedOptions];
-  }, [addedOptions, options]);
-
-  const sortedOptions = useMemo(() => {
-    if (selectedValue) {
-      return augmentedOptions;
-    }
-
-    const [selected, unselected] = _.partition(
-      augmentedOptions,
-      option => selectedValue === option[0],
-    );
-
-    return [...selected, ...unselected];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [augmentedOptions.length]);
-
-  const [filter, setFilter] = useState("");
-  const debouncedFilter = useDebouncedValue(filter, SEARCH_DEBOUNCE_DURATION);
-
-  const filteredOptions = useMemo(() => {
-    const formattedFilter = debouncedFilter.trim().toLowerCase();
-    if (formattedFilter.length === 0) {
-      return sortedOptions;
-    }
-
-    return augmentedOptions.filter(option => {
-      if (!option || option.length === 0) {
-        return false;
-      }
-
-      // option as: [id, name]
-      if (
-        option.length > 1 &&
-        option[1] &&
-        isValidOptionItem(option[1], formattedFilter)
-      ) {
-        return true;
-      }
-
-      // option as: [id]
-      return isValidOptionItem(option[0], formattedFilter);
+import { LockClosedIcon } from '@heroicons/react/solid'
+import { Dashboard } from '../containers/Dashboard'
+import { adminSignIn } from '../redux/action/admin.action'
+import { connect } from 'react-redux'
+import {useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+const AdminSignIn = (props) => {
+  const [user, setUser] = useState({
+    email: '',
+    password: ''
+  });
+  const navigate = useNavigate()
+  const handleChange = (e) => {
+    setUser({
+      ...user,
+      [e.target.name]: e.target.value
     });
-  }, [augmentedOptions, debouncedFilter, sortedOptions]);
-
-  const shouldShowEmptyState =
-    augmentedOptions.length > 0 && filteredOptions.length === 0;
-
-  const onClickOption = (option: any) => {
-    if (selectedValue !== option) {
-      setSelectedValue(option);
-      onChange?.([option]);
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (
-      event.key === "Enter" &&
-      !_.find(augmentedOptions, option => option[0] === filter)
-    ) {
-      setAddedOptions([...addedOptions, [filter]]);
-    }
-  };
-
-  const handleFilterChange: InputProps["onChange"] = e =>
-    setFilter(e.target.value);
-
+  }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    props.adminSignIn(user,navigate);
+    console.log("USER",user);
+  }
   return (
     <>
-      <FilterInputContainer isDashboardFilter={isDashboardFilter}>
-        <Input
-          fullWidth
-          autoFocus
-          placeholder={placeholder}
-          value={filter}
-          onChange={handleFilterChange}
-          onKeyDown={handleKeyDown}
-          onResetClick={() => setFilter("")}
-        />
-      </FilterInputContainer>
-
-      {shouldShowEmptyState && (
-        <EmptyStateContainer>
-          <EmptyState message={t`Didn't find anything`} icon="search" />
-        </EmptyStateContainer>
-      )}
-
-      <OptionsList isDashboardFilter={isDashboardFilter}>
-        {filteredOptions.map(option => (
-          <OptionContainer key={option[0]}>
-            <OptionItem
-              data-testid={`${option[0]}-filter-value`}
-              selectedColor={
-                checkedColor ?? isDashboardFilter ? "brand" : "filter"
-              }
-              selected={selectedValue === option[0]}
-              onClick={() => onClickOption(option[0])}
-              onMouseDown={e => e.preventDefault()}
-            >
-              {optionRenderer(option)}
-            </OptionItem>
-          </OptionContainer>
-        ))}
-      </OptionsList>
+      <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <img
+              className="mx-auto h-12 w-auto"
+              src="https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg"
+              alt="Workflow"
+            />
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign into Administrative account</h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+            </p>
+          </div>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <input type="hidden" name="remember" defaultValue="true" />
+            <div className="rounded-md shadow-sm -space-y-px">
+              <div>
+                <label htmlFor="email-address" className="sr-only">
+                  Email address
+                </label>
+                <input
+                  id="email-address"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Email address"
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="sr-only">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Password"
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
+              <div className="text-sm">
+                <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  Forgot your password?
+                </a>
+              </div>
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                }}
+                type="submit"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                  <LockClosedIcon className="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" aria-hidden="true" />
+                </span>
+              Admin Sign in
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </>
-  );
-};
-
-// eslint-disable-next-line import/no-default-export -- deprecated usage
-export default SingleSelectListField;
+  )
+}
+export default connect(null, { adminSignIn })(AdminSignIn)
+© 2023R
