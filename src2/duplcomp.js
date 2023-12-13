@@ -107,4 +107,3 @@ const AdminSignIn = (props) => {
   )
 }
 export default connect(null, { adminSignIn })(AdminSignIn)
-© 2023R
